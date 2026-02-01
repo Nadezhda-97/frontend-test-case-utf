@@ -1,35 +1,44 @@
-import { useDispatch, useSelector, useState } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { useState } from 'react';
 
-export function Cart() {
-  const dispatch = useDispatch()
-  const cart = useSelector((state) => state.app.cart)
-  const cartCount = useSelector((state) => state.app.cartCount)
-  const totalPrice = useSelector((state) => state.app.totalPrice)
-  
-  const [isOpen, setIsOpen] = useState(false)
-  const [showCheckout, setShowCheckout] = useState(false)
+import { selectCart, selectCartCount, selectTotalPrice } from '../store/store';
+import { removeFromCart, updateQuantity } from '../store/store';
+
+import { CartItem } from './CartItem';
+
+export function Cart({ onCheckout }) {
+  const dispatch = useDispatch();
+
+  const cart = useSelector(selectCart);
+  const cartCount = useSelector(selectCartCount);
+  const totalPrice = useSelector(selectTotalPrice);
+
+  const [isOpen, setIsOpen] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
 
   const handleRemoveItem = (id) => {
-    dispatch({ type: 'app/removeFromCart', payload: id })
-  }
+    dispatch(removeFromCart(id));
+  };
 
   const handleUpdateQuantity = (id, quantity) => {
     if (quantity <= 0) {
-      handleRemoveItem(id)
-      return
+      handleRemoveItem(id);
+      return;
     }
-    dispatch({ type: 'app/updateQuantity', payload: { id, quantity } })
-  }
+    dispatch(updateQuantity({ id, quantity }));
+  };
 
-  const handleCheckout = () => {
-    setShowCheckout(true)
-    setTimeout(() => {
-      alert('Заказ оформлен!')
-      dispatch({ type: 'app/clearCart' })
-      setShowCheckout(false)
-      setIsOpen(false)
-    }, 1000)
-  }
+  const handleCheckout = async () => {
+    if (!onCheckout) return;
+
+    setShowCheckout(true);
+    try {
+      await onCheckout();
+    } finally {
+      setShowCheckout(false);
+      setIsOpen(false);
+    }
+};
 
   return (
     <div className="cart">
@@ -52,28 +61,12 @@ export function Cart() {
               <p>Корзина пуста</p>
             ) : (
               cart.map(item => (
-                <div key={item.id} className="cart-item">
-                  <img src={item.image} alt={item.name} />
-                  <div className="item-details">
-                    <h4>{item.name}</h4>
-                    <p>${item.price}</p>
-                    <div className="quantity-controls">
-                      <button onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}>
-                        -
-                      </button>
-                      <span>{item.quantity}</span>
-                      <button onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}>
-                        +
-                      </button>
-                    </div>
-                  </div>
-                  <button 
-                    className="remove-btn"
-                    onClick={() => handleRemoveItem(item.id)}
-                  >
-                    Удалить
-                  </button>
-                </div>
+                <CartItem
+                  key={item.id}
+                  item={item}
+                  onRemove={handleRemoveItem}
+                  onChangeQuantity={handleUpdateQuantity}
+                />
               ))
             )}
           </div>
@@ -91,5 +84,5 @@ export function Cart() {
         </div>
       )}
     </div>
-  )
+  );
 }
