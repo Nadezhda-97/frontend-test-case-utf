@@ -1,6 +1,6 @@
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
-import { setUser } from "../store/store";
+import { setUser, clearCart } from "../store/store";
 
 import { Header } from "./Header";
 import { ProductList } from "./ProductList";
@@ -12,7 +12,6 @@ export function AppContent() {
   const isLoading = !user;
 
   useEffect(() => {
-    // имитация загрузки пользователя
     const timer = setTimeout(() => {
       dispatch(
         setUser({ 
@@ -23,15 +22,25 @@ export function AppContent() {
       );
     }, 500);
 
-    return () => clearTimeout(timer); // чистим таймер при размонтировании
+    return () => clearTimeout(timer);
   }, [dispatch]);
+
+  const handleCheckout = async () => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        alert("Заказ оформлен!");
+        dispatch(clearCart());
+        resolve();
+      }, 1000);
+    });
+  };
 
   return (
     <div className="app">
       <Header user={user} isLoading={isLoading}/>
       <div className="main-content">
         <ProductList />
-        <Cart />
+        <Cart onCheckout={handleCheckout} />
       </div>
     </div>
   )
